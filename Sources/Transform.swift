@@ -1,10 +1,10 @@
-struct Transform {
-  let process: (JSON) -> TransformResult
+struct Transform<C> {
+  let process: (C, JSON) -> TransformResult
 }
 
 extension Transform {
-  static func rename(from: String, to: String) -> Transform {
-    return Transform { _ in
+  static func rename<C>(from: String, to: String, needed: Bool = true) -> Transform<C> {
+    return Transform<C> { _, _ in
         return .error(.fieldMissing(field: from, message: nil))
     }
   }
