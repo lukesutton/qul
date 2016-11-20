@@ -1,19 +1,19 @@
 struct PipelineAccumulator {
   let json: JSON
-  let failures: [String]
+  let errors: [TransformError]
 
   func update(json: JSON) -> PipelineAccumulator {
-    return PipelineAccumulator(json: json, failures: failures)
+    return PipelineAccumulator(json: json, errors: errors)
   }
 
-  func update(failures: [String]) -> PipelineAccumulator {
-    return PipelineAccumulator(json: json, failures: self.failures + failures)
+  func update(error: TransformError) -> PipelineAccumulator {
+    return PipelineAccumulator(json: json, errors: self.errors + [error])
   }
 }
 
 enum PipelineResult {
   case success(JSON)
-  case failure(JSON, [String])
+  case error(JSON, [TransformError])
 }
 
 struct Pipeline {
@@ -28,16 +28,16 @@ struct Pipeline {
   }
 
   func run(json: JSON) -> PipelineResult {
-    let acc = PipelineAccumulator(json: json, failures: [])
+    let acc = PipelineAccumulator(json: json, errors: [])
     let result = transforms.reduce(acc) { memo, transform in
       switch transform.process(json) {
       case let .success(json): return memo.update(json: json)
-      case let .failure(messages): return memo.update(failures: messages)
+      case let .error(message): return memo.update(error: message)
       }
     }
 
-    if result.failures.count > 0 {
-      return .failure(result.json, result.failures)
+    if result.errors.count > 0 {
+      return .error(result.json, result.errors)
     }
     else {
       return .success(result.json)
